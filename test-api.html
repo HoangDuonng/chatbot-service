@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Tư Vấn Khách Sạn</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .session-info {
+            font-size: 14px;
+            color: #666;
+        }
+        .session-id {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .chat-form {
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .chat-messages {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .message.user {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .message.assistant {
+            background-color: #e9ecef;
+            color: #333;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status.online {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.offline {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        .typing-dots {
+            display: flex;
+            gap: 2px;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏨 Chatbot Tư Vấn Khách Sạn</h1>
+        
+        <div id="status" class="status">
+            <span id="statusText">Đang kiểm tra kết nối...</span>
+        </div>
+        
+        <div class="header">
+            <div class="session-info">
+                Phiên chat: <span id="sessionId" class="session-id">Đang tạo...</span>
+            </div>
+            <div>
+                <button onclick="clearSession()" class="btn-danger">Bắt đầu lại</button>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div>Xin chào! Tôi là trợ lý tư vấn khách sạn. Bạn có thể hỏi tôi về:</div>
+                <div style="margin-top: 8px;">
+                    • Khách sạn ở các thành phố khác nhau<br>
+                    • Thông tin về giá cả, tiện nghi<br>
+                    • Đánh giá và nhận xét từ khách hàng<br>
+                    • Hướng dẫn đặt phòng
+                </div>
+                <div class="message-time">Bây giờ</div>
+            </div>
+        </div>
+        
+        <div class="chat-form">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Nhập câu hỏi của bạn..." />
+                <button onclick="sendMessage()" id="sendBtn">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        // Khởi tạo session
+        function initSession() {
+            document.getElementById('sessionId').textContent = 'Simple Chat';
+        }
+        
+        // Kiểm tra kết nối API
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('status').className = 'status online';
+                    document.getElementById('statusText').textContent = '✅ Sẵn sàng tư vấn';
+                } else {
+                    throw new Error('API không phản hồi');
+                }
+            } catch (error) {
+                document.getElementById('status').className = 'status offline';
+                document.getElementById('statusText').textContent = '❌ Không thể kết nối. Hãy chạy: python rag-chat.py';
+            }
+        }
+        
+        // Gửi tin nhắn
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const message = messageInput.value.trim();
+            if (!message) {
+                alert('Vui lòng nhập câu hỏi!');
+                return;
+            }
+            
+            // Disable button và hiển thị loading
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Đang xử lý...';
+            
+            // Thêm tin nhắn user vào chat
+            addMessageToChat('user', message);
+            messageInput.value = '';
+            
+            // Thêm typing indicator
+            const typingId = addTypingIndicator();
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Xóa typing indicator
+                removeMessage(typingId);
+                
+                if (data.success) {
+                    addMessageToChat('assistant', data.response);
+                } else {
+                    if (response.status === 429) {
+                        addMessageToChat('assistant', `⚠️ Quá nhiều request. Vui lòng đợi 1 phút rồi thử lại.`, false, true);
+                    } else {
+                        addMessageToChat('assistant', `Xin lỗi, có lỗi xảy ra: ${data.error}`, false, true);
+                    }
+                }
+            } catch (error) {
+                removeMessage(typingId);
+                addMessageToChat('assistant', `Không thể kết nối đến server. Vui lòng thử lại sau.`, false, true);
+            } finally {
+                // Re-enable button
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Gửi';
+            }
+        }
+        
+        // Thêm tin nhắn vào chat
+        function addMessageToChat(role, content, isLoading = false, isError = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `message ${role}`;
+            if (isError) messageDiv.classList.add('error');
+            if (isLoading) messageDiv.classList.add('loading');
+            
+            messageDiv.innerHTML = `
+                <div>${content}</div>
+                <div class="message-time">${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageId;
+        }
+        
+        // Thêm typing indicator
+        function addTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingId = 'typing_' + Date.now();
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.id = typingId;
+            typingDiv.className = 'message assistant';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span>Đang tìm kiếm thông tin</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return typingId;
+        }
+        
+        // Xóa tin nhắn
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
+            }
+        }
+        
+        // Xóa session và bắt đầu lại
+        async function clearSession() {
+            if (!confirm('Bạn có muốn bắt đầu cuộc trò chuyện mới không?')) return;
+            
+            try {
+                // Sử dụng action để end session
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        action: 'end_session'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Xóa chat messages và hiển thị welcome message
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div class="message assistant">
+                            <div>✅ Đã bắt đầu cuộc trò chuyện mới!</div>
+                            <div style="margin-top: 8px;">
+                                Bạn có thể hỏi tôi về:<br>
+                                • Khách sạn ở các thành phố khác nhau<br>
+                                • Thông tin về giá cả, tiện nghi<br>
+                                • Đánh giá và nhận xét từ khách hàng<br>
+                                • Hướng dẫn đặt phòng
+                            </div>
+                            <div class="message-time">Bây giờ</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Lỗi khi xóa session:', error);
+                // Vẫn xóa chat messages ngay cả khi API lỗi
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message assistant">
+                        <div>✅ Đã bắt đầu cuộc trò chuyện mới!</div>
+                        <div style="margin-top: 8px;">
+                            Bạn có thể hỏi tôi về:<br>
+                            • Khách sạn ở các thành phố khác nhau<br>
+                            • Thông tin về giá cả, tiện nghi<br>
+                            • Đánh giá và nhận xét từ khách hàng<br>
+                            • Hướng dẫn đặt phòng
+                        </div>
+                        <div class="message-time">Bây giờ</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Enter key để gửi
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Khởi tạo khi load trang
+        document.addEventListener('DOMContentLoaded', function() {
+            initSession();
+            checkConnection();
+            
+            // Kiểm tra lại mỗi 30 giây
+            setInterval(checkConnection, 30000);
+        });
+    </script>
+</body>
+</html> 
